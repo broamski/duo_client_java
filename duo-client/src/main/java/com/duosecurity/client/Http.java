@@ -166,7 +166,7 @@ public class Http {
         // adding support for a HTTP Proxy Server
         // the typical megacorp will probably have one
         HttpHost proxy = new HttpHost(proxy_host, proxy_port);
-        addHTTPClientParam(ConnRoutePNames.DEFAULT_PROXY, proxy);
+        addHttpClientParam(ConnRoutePNames.DEFAULT_PROXY, proxy);
     }
     
     protected String canonRequest(String date, int sig_version)
