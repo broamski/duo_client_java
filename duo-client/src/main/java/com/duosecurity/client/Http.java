@@ -10,8 +10,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.Locale;
 
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
@@ -22,6 +25,7 @@ import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
@@ -35,6 +39,7 @@ public class Http {
     private String uri;
     private HeaderGroup headers;
     private ArrayList<NameValuePair> params;
+    private Hashtable<String, Object> http_client_params;
 
     public static SimpleDateFormat RFC_2822_DATE_FORMAT
         = new SimpleDateFormat("EEE', 'dd' 'MMM' 'yyyy' 'HH:mm:ss' 'Z",
@@ -49,6 +54,7 @@ public class Http {
         addHeader("Host", host);
 
         params = new ArrayList<NameValuePair>();
+        http_client_params = new Hashtable<String, Object>();
     }
 
     public Object executeRequest() throws Exception {
@@ -89,6 +95,16 @@ public class Http {
         // finish and execute request
         request.setHeaders(headers.getAllHeaders());
         HttpClient httpclient = new DefaultHttpClient();
+        // sets http client parameters, if any
+        // this needs to be changed to RequestConfig
+        // when HttpClient is updated to 4.3
+        Enumeration em=http_client_params.keys();
+        while(em.hasMoreElements())
+        {
+            String key = (String) em.nextElement();
+            Object value=(Object)http_client_params.get(key);
+            httpclient.getParams().setParameter(key, value);
+        }
         HttpResponse response = httpclient.execute(request);
 
         // parse response
@@ -140,6 +156,19 @@ public class Http {
         params.add(new BasicNameValuePair(name, value));
     }
 
+    public void addHttpClientParam(String name, Object value)
+    {
+    	http_client_params.put(name, value);
+    }
+    
+    public void setProxyServer(String proxy_host, int proxy_port)
+    {
+        // adding support for a HTTP Proxy Server
+        // the typical megacorp will probably have one
+        HttpHost proxy = new HttpHost(proxy_host, proxy_port);
+        addHTTPClientParam(ConnRoutePNames.DEFAULT_PROXY, proxy);
+    }
+    
     protected String canonRequest(String date, int sig_version)
       throws UnsupportedEncodingException {
         String canon = "";
